@@ -14,8 +14,10 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +46,16 @@ public class SecurityConfig {
         });
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
+
+        httpSecurity.cors(corsConfigurer ->{
+            corsConfigurer.configurationSource(request->{
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(Arrays.asList("*"));
+                configuration.setAllowedMethods(Arrays.asList("*"));
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                return configuration;
+            });
+        });
 
 
         return httpSecurity.build();
