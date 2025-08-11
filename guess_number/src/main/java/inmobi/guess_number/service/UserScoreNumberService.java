@@ -49,10 +49,13 @@ public class UserScoreNumberService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new AppException(ErrorCode.USER_NOT_EXISTED));
         UserScoreNumber userScoreNumber = userScoreNumberRepository.findByUserId(userId);
-
-        if(user.getTurn() == 0){
+        var turns = user.getTurn();
+        if (turns == 0) {
             throw new AppException(ErrorCode.NO_TURNS_LEFT);
         }
+
+        var newTurns  = turns - 1;
+        user.setTurn(newTurns);
 
         var number = request.getNumber();
         var resultNumber = userScoreNumber.getNumber();
@@ -63,10 +66,10 @@ public class UserScoreNumberService {
             user.setScore(user.getScore() + 1);
             //RESET VALUE NUMBER
             userScoreNumber.setNumber(0);
-
             userScoreNumberRepository.save(userScoreNumber);
-            userRepository.save(user);
         }
+
+        userRepository.save(user);
 
         return GuessNumberResponse.builder()
                 .message(message)

@@ -106,8 +106,8 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/buy-turns")
-    ApiResponse<User> buyTurn(@PathVariable("userId") String userId) {
-        ApiResponse<User> response = new ApiResponse<>();
+    ApiResponse<UserResponse> buyTurn(@PathVariable("userId") String userId) {
+        ApiResponse<UserResponse> response = new ApiResponse<>();
 
         response.setMessage("success");
         response.setCode(200);

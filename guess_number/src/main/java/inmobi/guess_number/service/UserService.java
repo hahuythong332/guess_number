@@ -73,14 +73,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User buyTurns(String id) {
+    public UserResponse buyTurns(String id) {
         User user = userRepository.findById(id).orElseThrow(() ->
                 new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var TURNS = 5;
 
         user.setTurn(user.getTurn() + TURNS);
-        return userRepository.save(user);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
 
