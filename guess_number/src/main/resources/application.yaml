@@ -1,17 +1,26 @@
 server:
   port: 8080
   servlet:
-      context-path: /guess_number/api
+    context-path: /guess_number/api
 
 spring:
   datasource:
     url: "jdbc:mysql://localhost:3306/guess_number"
     username: root
     password: Hahuythong32.
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000
+  cache:
+    type: redis
   jpa:
-      hibernate:
-          ddl-auto: update
-      show-sql: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 jwt:
-    signerKey: "e86wukYciV6FX6e9dEykkTlBjh+59USH6IpaenK1lJkvz9fF8Sk5B8SG7pX8/Wa/"
+  signerKey: "e86wukYciV6FX6e9dEykkTlBjh+59USH6IpaenK1lJkvz9fF8Sk5B8SG7pX8/Wa/"
+
+

@@ -10,6 +10,7 @@ import inmobi.guess_number.mapper.UserMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,10 +41,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Cacheable(value = "users", key = "#username")
     public UserResponse getProfileByUserName(String username) {
-
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userMapper.toUserResponse(user);
     }
 
@@ -51,6 +52,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    @Cacheable(value = "users")
     public List<UserResponse> getLeaderBoard() {
         return userRepository.findTop10ByOrderByScoreDesc().stream()
                 .map(userMapper::toUserResponse)

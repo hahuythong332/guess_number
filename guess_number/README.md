@@ -56,6 +56,20 @@ Edit the file application.yml:
 
             password: root
 
+          data:
+            
+        redis:
+            
+            host: localhost
+            
+            port: 6379
+            
+            timeout: 2000
+        
+        cache:
+        
+            type: redis   
+
         jpa:
 
             hibernate:
