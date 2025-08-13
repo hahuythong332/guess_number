@@ -3,13 +3,14 @@ package inmobi.guess_number.service;
 import java.util.List;
 
 import inmobi.guess_number.dto.request.UserUpdateRequest;
-import inmobi.guess_number.entity.UserScoreNumber;
 import inmobi.guess_number.exception.AppException;
 import inmobi.guess_number.exception.ErrorCode;
 import inmobi.guess_number.mapper.UserMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,8 @@ public class UserService {
     UserRepository userRepository;
     UserMapper userMapper;
 
+    @CacheEvict(value = "leaderboard", allEntries = true)
+    @CachePut(value = "users")
     public User createUser(UserCreationRequest request) {
 
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -41,9 +44,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    @Cacheable(value = "users", key = "#username")
-    public UserResponse getProfileByUserName(String username) {
-        User user = userRepository.findByUsername(username)
+    @Cacheable(value = "users", key = "#id")
+    public UserResponse getProfileByUserId(String id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userMapper.toUserResponse(user);
     }
@@ -52,7 +55,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    @Cacheable(value = "users")
+    @Cacheable(value = "leaderboard")
     public List<UserResponse> getLeaderBoard() {
         return userRepository.findTop10ByOrderByScoreDesc().stream()
                 .map(userMapper::toUserResponse)
@@ -65,16 +68,19 @@ public class UserService {
         ));
     }
 
-    public User updateUser(String id, UserUpdateRequest request) {
+    @CacheEvict(value = "leaderboard", allEntries = true)
+    @CachePut(value = "users", key = "#id")
+    public UserResponse updateUser(String id, UserUpdateRequest request) {
         User user = userRepository.findById(id).orElseThrow(
                 () -> new RuntimeException("User not found!")
         );
 
         userMapper.updateUser(user, request);
-        ;
-        return userRepository.save(user);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
+    @CacheEvict(value = "leaderboard", allEntries = true)
+    @CachePut(value = "users", key = "#id")
     public UserResponse buyTurns(String id) {
         User user = userRepository.findById(id).orElseThrow(() ->
                 new AppException(ErrorCode.USER_NOT_EXISTED));

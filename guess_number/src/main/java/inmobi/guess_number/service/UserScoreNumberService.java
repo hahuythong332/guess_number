@@ -1,16 +1,20 @@
 package inmobi.guess_number.service;
 
 import inmobi.guess_number.dto.request.GuessNumberRequest;
+import inmobi.guess_number.dto.request.UserUpdateRequest;
 import inmobi.guess_number.dto.response.GuessNumberResponse;
 import inmobi.guess_number.entity.User;
 import inmobi.guess_number.entity.UserScoreNumber;
 import inmobi.guess_number.exception.AppException;
 import inmobi.guess_number.exception.ErrorCode;
+import inmobi.guess_number.mapper.UserMapper;
 import inmobi.guess_number.repository.UserRepository;
 import inmobi.guess_number.repository.UserScoreNumberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -22,24 +26,28 @@ public class UserScoreNumberService {
 
     UserRepository userRepository;
     UserScoreNumberRepository userScoreNumberRepository;
+    UserService userService;
+    UserMapper userMapper;
+
+
 
     //USER WIN RATES CAN BE MODIFIED
     private static final double USER_WIN_RATES = 0.05;
     private static final double EASY_SECRET_NUMBER_AMOUNT = 5;
 
-    public void generateUserScoreNumber(String userId) {
+    public void generateUserScoreNumber(String id) {
 
         UserScoreNumber targetUserScore = new UserScoreNumber();
 
-        UserScoreNumber userScoreNumber = userScoreNumberRepository.findByUserId(userId);
+        UserScoreNumber userScoreNumber = userScoreNumberRepository.findByUserId(id);
 
         if (userScoreNumber != null) {
             targetUserScore = userScoreNumber;
         } else {
-            targetUserScore.setUserId(userId);
+            targetUserScore.setUserId(id);
         }
 
-        int maxNumberRange = (int) Math.round(EASY_SECRET_NUMBER_AMOUNT / USER_WIN_RATES) ;
+        int maxNumberRange = (int) Math.round(EASY_SECRET_NUMBER_AMOUNT / USER_WIN_RATES);
 
         int number = ThreadLocalRandom.current().nextInt(1, maxNumberRange);
 
@@ -48,10 +56,12 @@ public class UserScoreNumberService {
         userScoreNumberRepository.save(targetUserScore);
     }
 
-    public GuessNumberResponse guessNumber(String userId, GuessNumberRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
+
+    @CacheEvict(value = "leaderboard", allEntries = true)
+    public GuessNumberResponse guessNumber(String id, GuessNumberRequest request) {
+        User user = userRepository.findById(id).orElseThrow(() ->
                 new AppException(ErrorCode.USER_NOT_EXISTED));
-        UserScoreNumber userScoreNumber = userScoreNumberRepository.findByUserId(userId);
+        UserScoreNumber userScoreNumber = userScoreNumberRepository.findByUserId(id);
         var turns = user.getTurn();
         if (turns == 0) {
             throw new AppException(ErrorCode.NO_TURNS_LEFT);
@@ -65,16 +75,14 @@ public class UserScoreNumberService {
         var isCorrect = number == resultNumber;
         var message = isCorrect ? "The answer is correct." : "The answer is incorrect.";
 
-        userRepository.save(user);
-
         if (isCorrect) {
             user.setScore(user.getScore() + 1);
             userScoreNumberRepository.save(userScoreNumber);
         }
 
         //RE-GENERATE NUMBER
-        this.generateUserScoreNumber(userId);
-
+        this.generateUserScoreNumber(id);
+        userService.updateUser(user.getId(), userMapper.toUserUpdateRequest(user));
 
         return GuessNumberResponse.builder()
                 .message(message)

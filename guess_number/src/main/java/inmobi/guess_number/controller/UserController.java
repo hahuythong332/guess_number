@@ -7,18 +7,14 @@ import inmobi.guess_number.dto.request.GuessNumberRequest;
 import inmobi.guess_number.dto.request.UserUpdateRequest;
 import inmobi.guess_number.dto.response.GuessNumberResponse;
 import inmobi.guess_number.dto.response.UserResponse;
-import inmobi.guess_number.entity.UserScoreNumber;
 import inmobi.guess_number.service.UserScoreNumberService;
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import inmobi.guess_number.dto.request.UserCreationRequest;
 import inmobi.guess_number.entity.User;
 import inmobi.guess_number.service.UserService;
 
@@ -35,10 +31,10 @@ public class UserController {
     @GetMapping("me")
     ApiResponse<UserResponse> profile(@AuthenticationPrincipal Jwt jwt) {
         ApiResponse<UserResponse> response = new ApiResponse<>();
-        String username = jwt.getSubject();
+        String userId = jwt.getClaim("userId");
 
         response.setCode(200);
-        response.setResult(userService.getProfileByUserName(username));
+        response.setResult(userService.getProfileByUserId(userId));
 
         return response;
     }
@@ -76,14 +72,13 @@ public class UserController {
         return response;
     }
 
-    @PutMapping("/{userId}")
-    ApiResponse<User> updateUser(@PathVariable("userId") String userId, @RequestBody UserUpdateRequest request) {
-        ApiResponse<User> response = new ApiResponse<>();
+    @PutMapping("/{id}")
+    ApiResponse<UserResponse> updateUser(@PathVariable("userId") String userId, @RequestBody UserUpdateRequest request) {
+        ApiResponse<UserResponse> response = new ApiResponse<>();
 
         response.setMessage("success");
         response.setCode(200);
         response.setResult(userService.updateUser(userId, request));
-
 
         return response;
     }
