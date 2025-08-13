@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,8 +40,16 @@ public class UserScoreNumberService {
             targetUserScore.setUserId(userId);
         }
 
-        //Random number from 1 to 5
-        targetUserScore.setNumber((int) (Math.random() * 5) + 1);
+        int number;
+        if (ThreadLocalRandom.current().nextInt(100) < 5) {
+            // 5% percent for generating easy guess number
+            number = ThreadLocalRandom.current().nextInt(1, 5);
+        } else {
+            // 95% percent for generating hard guess number
+            number = ThreadLocalRandom.current().nextInt(1, 100);
+        }
+
+        targetUserScore.setNumber(number);
 
         return userScoreNumberRepository.save(targetUserScore);
     }
@@ -67,6 +76,10 @@ public class UserScoreNumberService {
             //RESET VALUE NUMBER
             userScoreNumber.setNumber(0);
             userScoreNumberRepository.save(userScoreNumber);
+        }
+        else {
+            //Re-Generate When User Guess Wrong
+            this.generateUserScoreNumber(userId);
         }
 
         userRepository.save(user);
