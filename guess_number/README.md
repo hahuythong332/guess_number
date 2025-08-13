@@ -25,7 +25,8 @@ Make sure you have installed:
 
 - [Java JDK 24+](https://www.oracle.com/java/technologies/downloads/)
 - [Maven](https://maven.apache.org/) 
-- [MySQL/](https://www.mysql.com/) 
+- [MySQL](https://www.mysql.com/) 
+- [Redis](https://github.com/tporadowski/redis/releases)
 
 ### 2️⃣ Clone the Repository
 
