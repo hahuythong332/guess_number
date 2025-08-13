@@ -1,6 +1,5 @@
 package inmobi.guess_number.service;
 
-import com.nimbusds.jose.JOSEException;
 import inmobi.guess_number.dto.request.GuessNumberRequest;
 import inmobi.guess_number.dto.response.GuessNumberResponse;
 import inmobi.guess_number.entity.User;
@@ -15,10 +14,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +23,11 @@ public class UserScoreNumberService {
     UserRepository userRepository;
     UserScoreNumberRepository userScoreNumberRepository;
 
-    public UserScoreNumber generateUserScoreNumber(String userId) {
+    //USER WIN RATES CAN BE MODIFIED
+    private static final double USER_WIN_RATES = 0.05;
+    private static final double EASY_SECRET_NUMBER_AMOUNT = 5;
+
+    public void generateUserScoreNumber(String userId) {
 
         UserScoreNumber targetUserScore = new UserScoreNumber();
 
@@ -40,18 +39,13 @@ public class UserScoreNumberService {
             targetUserScore.setUserId(userId);
         }
 
-        int number;
-        if (ThreadLocalRandom.current().nextInt(100) < 5) {
-            // 5% percent for generating easy guess number
-            number = ThreadLocalRandom.current().nextInt(1, 5);
-        } else {
-            // 95% percent for generating hard guess number
-            number = ThreadLocalRandom.current().nextInt(1, 100);
-        }
+        int maxNumberRange = (int) Math.round(EASY_SECRET_NUMBER_AMOUNT / USER_WIN_RATES) ;
+
+        int number = ThreadLocalRandom.current().nextInt(1, maxNumberRange);
 
         targetUserScore.setNumber(number);
 
-        return userScoreNumberRepository.save(targetUserScore);
+        userScoreNumberRepository.save(targetUserScore);
     }
 
     public GuessNumberResponse guessNumber(String userId, GuessNumberRequest request) {
@@ -63,7 +57,7 @@ public class UserScoreNumberService {
             throw new AppException(ErrorCode.NO_TURNS_LEFT);
         }
 
-        var newTurns  = turns - 1;
+        var newTurns = turns - 1;
         user.setTurn(newTurns);
 
         var number = request.getNumber();
@@ -71,18 +65,16 @@ public class UserScoreNumberService {
         var isCorrect = number == resultNumber;
         var message = isCorrect ? "The answer is correct." : "The answer is incorrect.";
 
+        userRepository.save(user);
+
         if (isCorrect) {
             user.setScore(user.getScore() + 1);
-            //RESET VALUE NUMBER
-            userScoreNumber.setNumber(0);
             userScoreNumberRepository.save(userScoreNumber);
         }
-        else {
-            //Re-Generate When User Guess Wrong
-            this.generateUserScoreNumber(userId);
-        }
 
-        userRepository.save(user);
+        //RE-GENERATE NUMBER
+        this.generateUserScoreNumber(userId);
+
 
         return GuessNumberResponse.builder()
                 .message(message)

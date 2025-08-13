@@ -96,11 +96,11 @@ public class UserController {
         response.setCode(200);
         try {
             userScoreNumberService.generateUserScoreNumber(userId);
+            response.setResult("Generate Successfully");
         } catch (Exception e) {
             response.setMessage("Generate Failed");
             response.setCode(404);
         }
-        response.setResult("Generate Successfully");
 
         return response;
     }
